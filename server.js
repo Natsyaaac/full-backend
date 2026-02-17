@@ -47,4 +47,18 @@ const createMovieCollection = () => {
   };
 };
 
+const movieCollection = createMovieCollection(); // memanggil createMovieCollection  lalu menyimpan object hasil return agar bisa digunakan 
+ 
+app.get(`/api/movies`, async (req, res) => {  // route GET untuk ke  /api/movies yang dijalankan saat ada request masuk 
+  try { // coba 
+    await new Promise(resolve => setTimeout(resolve, 500)); // menuungu 500ms sebelum melanjutkan eksekusi 
+    const movies = movieCollection.getAllMovies(); // mengambil seluruh data movie dari colection 
+    res.json(movies); // mengirim data movie sebagai response dalam format JSON ke client 
+  } catch (error) {
+    res.status(500).json({ error: error.message }); // jika terjadi error saat proses, kirim response status 500 beserta pesan error
+  }
+});
+
+
+
 
