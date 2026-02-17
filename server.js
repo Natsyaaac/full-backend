@@ -4,7 +4,7 @@ import cors from 'cors';
 const app = express();
 const port = 5000;
 
-app.use(cors()); // mengaktifkan cors untu mengizinkan akses ke api backend 
+app.use(cors()); // mengaktifkan cors agar bacend bisa diakses dari domain / fronted lain
 app.use(express.json()); // membaca body request JSON lalu mengubah nya ke object javascript 
 
 
@@ -22,21 +22,20 @@ const createMovieCollection = () => {
   ];
 
   return {
-    getAllMovies: () => [...movies], // fungsi untuk menyalin semua movies untuk digunakan sebagai kategori semua 
-    getMovieById: (id) => movies.find(movie => movie.id === id), // fungis untuk menyaring movie berdasarkan id nya 
+    getAllMovies: () => [...movies], // mengembalikan salinan selurug data movie agar data asli tidak dimodifikasi langsung
+    getMovieById: (id) => movies.find(movie => movie.id === id), // mencari satu movie berdasarkan id yang cocok 
     addMovie: (movie) => {  // fungsi untuk menambahkan movie baru ke dalam array 
-      const newMovie = { ...movie, id: movies.length + 1 }; // menambahkan id baru dengan panjang semua id ditambah 1 misal (6 + 1 = 7)
-      movies.push(newMovie); // simpan ke array  sebagai movie baru 
-      return newMovie // mengirim hasil ke pemanggil fungsi untu langsu dipakai datanya 
+      const newMovie = { ...movie, id: movies.length + 1 }; // membuat object baru dan memberi id berdasarkan jumlah data saat ini 
+      movies.push(newMovie); // menambahkan movie baru ke dalam array 
+      return newMovie // mengembalikan data movie yang baru ditambahkan 
     },
     toggleWatched: (id) => {  // fungsi dimana mendeteksi apakah film ini sudah di tonton atau belum 
       movies = movies.map(movie =>  
-        movie.id === id ? { ...movie, watched: !movie.watched } : movie
-
-        // jika semua id movie sama dengan id di array makan salin smua, dan tetapkan ditonton atau belom ditonton 
+        movie.id === id ? { ...movie, watched: !movie.watched } // jika id cocok, balik nilai watched(false) 
+        : movie // jika tidak cocok, birakan data tetap
       );
 
-      return movies.find(movie => movie.id === id); // mengirim hasil untuk filter nya sesuai id 
+      return movies.find(movie => movie.id === id); // mengembalikan movie yang sudahh diperbarui
     },
     getStats: () => ({ // fungsi untuk melihat stat data 
       total: movies.length, // menghitung semua movie yang ada didalam array 
