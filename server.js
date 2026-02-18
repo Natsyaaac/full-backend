@@ -30,9 +30,9 @@ const createMovieCollection = () => {
       return newMovie // mengembalikan data movie yang baru ditambahkan 
     },
     toggleWatched: (id) => {  // fungsi dimana mendeteksi apakah film ini sudah di tonton atau belum 
-      movies = movies.map(movie =>  
+      movies = movies.map(movie =>
         movie.id === id ? { ...movie, watched: !movie.watched } // jika id cocok, balik nilai watched(false) 
-        : movie // jika tidak cocok, birakan data tetap
+          : movie // jika tidak cocok, birakan data tetap
       );
 
       return movies.find(movie => movie.id === id); // mengembalikan movie yang sudahh diperbarui
@@ -48,8 +48,8 @@ const createMovieCollection = () => {
 };
 
 const movieCollection = createMovieCollection(); // memanggil createMovieCollection  lalu menyimpan object hasil return agar bisa digunakan 
- 
-app.get(`/api/movies`, async (req, res) => {  // route GET untuk ke  /api/movies yang dijalankan saat ada request masuk 
+
+app.get('/api/movies', async (req, res) => {  // route GET untuk ke  /api/movies yang dijalankan saat ada request masuk 
   try { // coba 
     await new Promise(resolve => setTimeout(resolve, 500)); // menuungu 500ms sebelum melanjutkan eksekusi 
     const movies = movieCollection.getAllMovies(); // mengambil seluruh data movie dari colection 
@@ -59,6 +59,42 @@ app.get(`/api/movies`, async (req, res) => {  // route GET untuk ke  /api/movies
   }
 });
 
+app.get('/api/movies/:id', async (req, res) => { // route GET untuk untuk mengambil satu movie berdasarkan id saat ada request 
+  try {
+    await new Promise(resolve => setTimeout(resolve, 300)); // menunggu 300ms sebelum melanjutkan eksekusi 
+    const movie = movieCollection.getMovieById(parseInt(req.params.id)); // mengambil satud ata movie berdasarkan id dari parameter URL
+    if (!movie) { // jika bukan movie tampilkan status error dengan pesan  'Movie not found'
+      return res.status(404).json({ error: 'Movie not found' });
+    }
+    res.json(movie);  // mengirim data movie sebagai response dalam format JSON ke client
+  } catch (error) {
+    res.status(500).json({ error: error.message }); // jika terjadi error saat proses, kirim response status 500 beserta pesan error 
+  }
+});
+
+app.post('/api/movies/toggle/:id', async (req, res) => { // route POST untuk mengubah status watched pada movie berdasarkan id 
+  try {
+    await new Promise(resolve => setTimeout(resolve, 400)); // menunggu 400ms sebelum melanjutkan eksekusi 
+    const updateMovie = movieCollection.toggleWatched(parseInt(req.params.id)); // membalik nilai watched (true/false) dari movie sesuai id 
+    res.json(updateMovie); // mengirim data movie sebagai response dalam format JSON ke client
+  } catch (error) {
+    res.status(500).json({ error: error.message }); // jika terjadi error saat proses, kirim response status 500 beserta pesan error 
+  }
+});
+
+app.get('/api/stats', async (req, res) => { // route GET untuk ke /api/stats saat request masuk
+  try {
+    await new Promise(resolve => setTimeout(resolve, 200)); // menunggu 200ms sebelum melanjutkan eksekusi 
+    const stats = movieCollection.getStats();  // mengambil data statistik seperti total movie, watched, unwatched, dan rata-rata rating
+    res.json(stats);  // mengirim data movie sebagai response dalam format JSON ke client 
+  } catch (error) {
+    res.status(500).json({ error: error.message }); // jika terjadi error saat proses, kirim response status 500 beserta pesan error 
+  }
+});
+
+app.listen(port, () => { //mulai server dan dengar request http di port 5000
+  console.log(`Server running at http://localhost:${port}`) // callback dijalankan setelah server berhasil hidup // tapil di console dengan server running at http://localhost:5000
+})
 
 
 
