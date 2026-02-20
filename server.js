@@ -2,99 +2,196 @@ import express from 'express';
 import cors from 'cors';
 
 const app = express();
-const port = 5000;
-
-app.use(cors()); // mengaktifkan cors agar bacend bisa diakses dari domain / fronted lain
-app.use(express.json()); // membaca body request JSON lalu mengubah nya ke object javascript 
+app.use(cors()); // middleware untuk mengizinkan request lintas origini (CORS policy browser)
+app.use(express.json()); // middleware untuk parsing body request JSON menjadi object rea.body
 
 
-// fungsi untuk data film dengan closure implementasi 
-const createMovieCollection = () => {
-  let movies = [  // arry untuk menyimpan object daftar film, nama, rating, tahun dan ditonton
-    { id: 1, title: "Inception", genre: "Sci-Fi", rating: 8.8, year: 2010, watched: false },
-    { id: 2, title: "The Shawshank Redemption", genre: "Drama", rating: 9.3, year: 1994, watched: true },
-    { id: 3, title: "The Dark Knight", genre: "Action", rating: 9.0, year: 2008, watched: false },
-    { id: 4, title: "Pulp Fiction", genre: "Crime", rating: 8.9, year: 1994, watched: true },
-    { id: 5, title: "Forrest Gump", genre: "Drama", rating: 8.8, year: 1994, watched: false },
-    { id: 6, title: "The Matrix", genre: "Sci-Fi", rating: 8.7, year: 1999, watched: true },
-    { id: 7, title: "Goodfellas", genre: "Crime", rating: 8.7, year: 1990, watched: false },
-    { id: 8, title: "Interstellar", genre: "Sci-Fi", rating: 8.6, year: 2014, watched: true }
-  ];
+const initialTasks = [  // array of obejct sebagai mock data awal (state awal apliaksi)
+  {
+    id: '1',
+    title: 'Design Wireframe',
+    description: 'Buat wireframe untuk halaman utama',
+    status: 'todo',
+    priority: 'high',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    title: 'Implement API',
+    description: 'Buat endpoint untuk tasks',
+    status: 'doing',
+    priority: 'high',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '3',
+    title: 'Testing',
+    description: 'Lakukan unit testing',
+    status: 'done',
+    priority: 'medium',
+    createdAt: new Date().toISOString()
+  }
+]
 
-  return {
-    getAllMovies: () => [...movies], // mengembalikan salinan selurug data movie agar data asli tidak dimodifikasi langsung
-    getMovieById: (id) => movies.find(movie => movie.id === id), // mencari satu movie berdasarkan id yang cocok 
-    addMovie: (movie) => {  // fungsi untuk menambahkan movie baru ke dalam array 
-      const newMovie = { ...movie, id: movies.length + 1 }; // membuat object baru dan memberi id berdasarkan jumlah data saat ini 
-      movies.push(newMovie); // menambahkan movie baru ke dalam array 
-      return newMovie // mengembalikan data movie yang baru ditambahkan 
-    },
-    toggleWatched: (id) => {  // fungsi dimana mendeteksi apakah film ini sudah di tonton atau belum 
-      movies = movies.map(movie =>
-        movie.id === id ? { ...movie, watched: !movie.watched } // jika id cocok, balik nilai watched(false) 
-          : movie // jika tidak cocok, birakan data tetap
-      );
+let tasks = [...initialTasks] // membuat salinan shallow copy array (object di dalamnua tetap referensi yang sama)
 
-      return movies.find(movie => movie.id === id); // mengembalikan movie yang sudahh diperbarui
-    },
-    getStats: () => ({ // fungsi untuk melihat stat data 
-      total: movies.length, // menghitung semua movie yang ada didalam array 
-      watched: movies.filter(m => m.watched).length, // menghitung semua movie yang telah dilihat 
-      unwatched: movies.filter(m => !m.watched).length, // menghitung semua movie yang belom dilihat 
-      averageRating: (movies.reduce((acc, m) => acc + m.rating, 0) / movies.length).toFixed(1)
-      // menghitung rating dengan mengumpulkan rating movie jadi satu dengan menghitung (tampungan hasil sementara + rating movie diarray dibagi semua movie) dan dibulatkan menggunakan tofixed 
-    })
-  };
-};
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))  // fungsi asycn yang mengembalikan Promise dan resolve setelah ms  milidetik 
 
-const movieCollection = createMovieCollection(); // memanggil createMovieCollection  lalu menyimpan object hasil return agar bisa digunakan 
+app.get('/api/tasks', async (req, res) => {  //Route Get async untuk endpoint ke /api/tasks yang dijalankan saat request masuk 
+  try {
+    await delay(500); // memanggil funngsi dan menunggu 500ms sebelum melanjutkan 
 
-app.get('/api/movies', async (req, res) => {  // route GET untuk ke  /api/movies yang dijalankan saat ada request masuk 
-  try { // coba 
-    await new Promise(resolve => setTimeout(resolve, 500)); // menuungu 500ms sebelum melanjutkan eksekusi 
-    const movies = movieCollection.getAllMovies(); // mengambil seluruh data movie dari colection 
-    res.json(movies); // mengirim data movie sebagai response dalam format JSON ke client 
+    res.json({ // mengrirm data tasks list sebagai response dalam format json 
+      success: true, // penanda bahawa response berhasil true
+      data: [...tasks] // mengirirm isi array sbegaai data(bikin salinan baru array baru, spread copy)
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message }); // jika terjadi error saat proses, kirim response status 500 beserta pesan error
+    res.status(500).json({ // mengrim response status 500 dalam format json 
+      success: false, // penanda bahawa response gagal false
+      error: error.message // error diikute dengan pesan didalamnya 
+    });
   }
 });
 
-app.get('/api/movies/:id', async (req, res) => { // route GET untuk untuk mengambil satu movie berdasarkan id saat ada request 
+app.get('/api/tasks/status/:status', async (req, res) => {  // Route get async untk endpoit ke /api/tasks/status dengan filter 
   try {
-    await new Promise(resolve => setTimeout(resolve, 300)); // menunggu 300ms sebelum melanjutkan eksekusi 
-    const movie = movieCollection.getMovieById(parseInt(req.params.id)); // mengambil satud ata movie berdasarkan id dari parameter URL
-    if (!movie) { // jika bukan movie tampilkan status error dengan pesan  'Movie not found'
-      return res.status(404).json({ error: 'Movie not found' });
+    await delay(300);  // memanggil fungsi dan menunggu 300ms sebelum melanjutkan
+
+    const validStatus = ['todo', 'doing', 'done']; // validasi status task list dengan include
+    if (!validStatus.includes(req.params.status)) { // validasi jika tidak sama dengan validStatus dan parameter dari url path route 
+      throw new Error('Status tidak valid') // lempar error baru status tidak valid 
     }
-    res.json(movie);  // mengirim data movie sebagai response dalam format JSON ke client
+
+    const filteredTasks = tasks.filter(  // fungsi untuk menfilter tasks 
+      task => task.status === req.params.status // menyamakanya dengan route parameter dari url path 
+    );
+
+    res.json({  // mengrim data task status sebagai responsedalam format json 
+      success: true,  // penanda bahwa response berhasil 
+      data: filteredTasks //  mengirim status list yang sudah difilter 
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message }); // jika terjadi error saat proses, kirim response status 500 beserta pesan error 
+    res.status(400).json({ // mengirim response status 500 dalam format json 
+      success: false,  // penandan bahwa ada kegagalan response, false
+      error: error.message  // error diikuti dengan pesan error didalamnya 
+    })
   }
 });
 
-app.post('/api/movies/toggle/:id', async (req, res) => { // route POST untuk mengubah status watched pada movie berdasarkan id 
+
+app.post('/api/tasks', async (req, res) => { // Route POST dengan async agar bisa menggunakan await dan menangani promise rejection
   try {
-    await new Promise(resolve => setTimeout(resolve, 400)); // menunggu 400ms sebelum melanjutkan eksekusi 
-    const updateMovie = movieCollection.toggleWatched(parseInt(req.params.id)); // membalik nilai watched (true/false) dari movie sesuai id 
-    res.json(updateMovie); // mengirim data movie sebagai response dalam format JSON ke client
+    const { title, description, priority } = req.body;  // obcjt destructing untuk mengambil properti title, description dll dari req.body 
+
+    const requiredFields = ['title', 'description', 'priority']; // array yangd digunakan menvalidasi request field
+
+
+    const hasAllFields = requiredFields.every(field =>
+      Object.keys(req.body).includes(field)
+      //mengecek semua apakah field wajib ada  di req.body menggunakan every(harus semua true)
+    );
+
+    if (!hasAllFields) {
+      throw new Error('Semua field harus diisi')  // jika validasi gagal, lempar error untuk menghetikan eksekusi dan masuk ke catch 
+    }
+
+    const validPriorities = ['low', 'medium', 'high'];  // arrray yang digunakan untuk mevalidasi task list kategori apa 
+    if (!validPriorities.includes(priority)) {
+      throw new Error('Priority tidak valid')
+      // mengecek apakah priority termasuk dalam dafatr menggunakan includes 
+    }
+
+    const newTask = {  // membuat object task baru menggunakan shorthand property dan menambahkan id serta timestamp
+      id: Date.now().toString(),
+      title,
+      description,
+      priority,
+      status: 'todo',
+      createdAt: new Date().toISOString()
+    };
+
+    tasks = [...tasks, newTask] // membuat array baru dengan spread operator(shallow copy) lalu menambahkan newTask di akhir
+
+    res.status(201).json({
+      success: true,
+      data: newTask
+      // mengirim HTTP 201(created) dengan data task baru dalam format json 
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message }); // jika terjadi error saat proses, kirim response status 500 beserta pesan error 
+    res.status(400).json({ // mengririm response status 400 ke dalam format json 
+      success: false, // gagal dalam mengirim data false 
+      error: error.message // error dan diikuti dengan pesan error
+    })
   }
 });
 
-app.get('/api/stats', async (req, res) => { // route GET untuk ke /api/stats saat request masuk
+app.put('/api/tasks/:id', async (req, res) => { // Route PUT  async untuk update task status berdasarkan parameter id (return Promise impliist) 
   try {
-    await new Promise(resolve => setTimeout(resolve, 200)); // menunggu 200ms sebelum melanjutkan eksekusi 
-    const stats = movieCollection.getStats();  // mengambil data statistik seperti total movie, watched, unwatched, dan rata-rata rating
-    res.json(stats);  // mengirim data movie sebagai response dalam format JSON ke client 
+    const { id } = req.params; // destrcuting untuk mengambil id dari req.params
+    const { status } = req.body; // destructing untuk mengambil statsu dari req.body 
+
+    const validStatus = ['todo', 'doing', 'done']; 
+    if (!validStatus.includes(status)) {  
+      throw new Error('Status tidak valid')  
+      // validasi status menggunakan includes (return bool dengan perbamdimngan ===)
+    }
+
+    const taskIndex = tasks.findIndex(t => t.id === id);  // mencari index task berdasarkan id menggunakan findIndex (return  -1 jika tidk ditemukan)
+
+    if (taskIndex === -1) {  // jika index-1(tidak ditemukan, lempar error untuk meghentikan eksekusi)
+      throw new Error('Task tidak ditemukan')
+    }
+
+    const updatedTask = {
+      ...tasks[taskIndex], 
+      status,
+      updatedAt: new Date().toISOString()
+      // membuat object baru dengan shallow copy task lama lalu override status dan updatedAT
+    };
+
+    tasks = [
+      ...tasks.slice(0, taskIndex),  
+      updatedTask, 
+      ...tasks.slice(taskIndex + 1) 
+      // membuat array baru dengan mengganti item pada index tertentu menggunakan slice + spread (immutable pattern) 
+    ];
+
+    res.json({
+      success: true,
+      data: updatedTask
+      // mengirim response JSON berisi data task yang telah diperbarui 
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message }); // jika terjadi error saat proses, kirim response status 500 beserta pesan error 
+    res.status(400).json({ // mengririm response status 400 ke dalam format json 
+      success: false, // gagal dalam mengirim data false 
+      error: error.message // error dan diikuti dengan pesan error
+    })
   }
 });
 
-app.listen(port, () => { //mulai server dan dengar request http di port 5000
-  console.log(`Server running at http://localhost:${port}`) // callback dijalankan setelah server berhasil hidup // tapil di console dengan server running at http://localhost:5000
+
+app.delete('/api/tasks/:id', async (req, res) => { // Route delete dengan async untuk menghapus task lewat id 
+  try {
+    const { id } = req.params; // obcjt destructing untuk mengambil properti id dari url paath bagian :id  
+
+    const newTask = tasks.filter(task => task.id !== id); // membuat array baru dengan mengahpus task yang id-nya sesuai menggunakan filter (immutable)
+
+    if (newTask.length === tasks.length) { 
+      throw new Error('Task tidak ditemukan');
+      // jika panjang array tidak berubah, berarti id tidak akan ditemukan 
+    }
+
+    tasks = newTask; //\ mengganti refernsi tasks dengan array hasil filter
+
+    res.json({ success: true, message: 'Task deleted' })  // response dengan json menandakan succes dan pesan task terhapush 
+  } catch (error) {
+    res.status(400).json({ // mengririm response status 400 ke dalam format json 
+      success: false, // gagal dalam mengirim data false 
+      error: error.message // error dan diikuti dengan pesan error
+    })
+  }
+});
+
+app.listen(5000, () => {  // menjalankan server pada port 5000 dan mengeksekusi callback saat server aktif 
+  console.log('🚀 Task Flow API running on http://localhost:5000')
 })
-
-
-
