@@ -2,196 +2,124 @@ import express from 'express';
 import cors from 'cors';
 
 const app = express();
-app.use(cors()); // middleware untuk mengizinkan request lintas origini (CORS policy browser)
-app.use(express.json()); // middleware untuk parsing body request JSON menjadi object rea.body
+const port = 5000;
 
+app.use(cors());
+app.use(express.json());
 
-const initialTasks = [  // array of obejct sebagai mock data awal (state awal apliaksi)
-  {
-    id: '1',
-    title: 'Design Wireframe',
-    description: 'Buat wireframe untuk halaman utama',
-    status: 'todo',
-    priority: 'high',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    title: 'Implement API',
-    description: 'Buat endpoint untuk tasks',
-    status: 'doing',
-    priority: 'high',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: '3',
-    title: 'Testing',
-    description: 'Lakukan unit testing',
-    status: 'done',
-    priority: 'medium',
-    createdAt: new Date().toISOString()
-  }
-]
+// Data dummy dengan berbagai scope (global scope)
+const globalData = {
+  users: [
+    { id: 1, name: 'Alex Johnson', email: 'alex@example.com', role: 'admin', active: true },
+    { id: 2, name: 'Sarah Chen', email: 'sarah@example.com', role: 'user', active: true },
+    { id: 3, name: 'Mike Wilson', email: 'mike@example.com', role: 'user', active: false },
+    { id: 4, name: 'Emma Davis', email: 'emma@example.com', role: 'editor', active: true },
+    { id: 5, name: 'James Brown', email: 'james@example.com', role: 'user', active: true }
+  ],
+  posts: [
+    { id: 1, userId: 1, title: 'Getting Started with React', likes: 45, category: 'food' },
+    { id: 2, userId: 2, title: 'Modern JavaScript Features', likes: 32, category: 'food' },
+    { id: 3, userId: 1, title: 'Travel Tips 2024', likes: 78, category: 'food' },
+    { id: 4, userId: 3, title: 'Healthy Recipes', likes: 23, category: 'food' },
+    { id: 5, userId: 4, title: 'Photography Basics', likes: 56, category: 'food' },
+    { id: 6, userId: 2, title: 'Meditation Guide', likes: 41, category: 'food' }
+  ]
+};
 
-let tasks = [...initialTasks] // membuat salinan shallow copy array (object di dalamnua tetap referensi yang sama)
+// Closure example: function factory
+const createApiResponse = (statusCode) => {
+  // statusCode adalah closure variable
+  return (data, message = 'Success') => ({
+    status: statusCode,
+    data: data,
+    message: message,
+    timestamp: new Date().toISOString()
+  });
+};
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))  // fungsi asycn yang mengembalikan Promise dan resolve setelah ms  milidetik 
+const successResponse = createApiResponse(200);
+const errorResponse = createApiResponse(500);
 
-app.get('/api/tasks', async (req, res) => {  //Route Get async untuk endpoint ke /api/tasks yang dijalankan saat request masuk 
+// API Routes dengan async/await dan error handling
+app.get('/api/users', async (req, res) => {
   try {
-    await delay(500); // memanggil funngsi dan menunggu 500ms sebelum melanjutkan 
-
-    res.json({ // mengrirm data tasks list sebagai response dalam format json 
-      success: true, // penanda bahawa response berhasil true
-      data: [...tasks] // mengirirm isi array sbegaai data(bikin salinan baru array baru, spread copy)
-    });
+    // Simulasi async operation
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Destructuring query params
+    const { filter, role } = req.query;
+    let filteredUsers = [...globalData.users];
+    
+    // Menggunakan filter method
+    if (filter === 'active') {
+      filteredUsers = filteredUsers.filter(user => user.active);
+    }
+    
+    if (role) {
+      filteredUsers = filteredUsers.filter(user => user.role === role);
+    }
+    
+    res.json(successResponse(filteredUsers));
   } catch (error) {
-    res.status(500).json({ // mengrim response status 500 dalam format json 
-      success: false, // penanda bahawa response gagal false
-      error: error.message // error diikute dengan pesan didalamnya 
-    });
+    res.status(500).json(errorResponse(null, error.message));
   }
 });
 
-app.get('/api/tasks/status/:status', async (req, res) => {  // Route get async untk endpoit ke /api/tasks/status dengan filter 
+app.get('/api/users/:id', async (req, res) => {
   try {
-    await delay(300);  // memanggil fungsi dan menunggu 300ms sebelum melanjutkan
-
-    const validStatus = ['todo', 'doing', 'done']; // validasi status task list dengan include
-    if (!validStatus.includes(req.params.status)) { // validasi jika tidak sama dengan validStatus dan parameter dari url path route 
-      throw new Error('Status tidak valid') // lempar error baru status tidak valid 
+    const { id } = req.params;
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Menggunakan find method
+    const user = globalData.users.find(user => user.id === parseInt(id));
+    
+    if (!user) {
+      return res.status(404).json(errorResponse(null, 'User not found'));
     }
-
-    const filteredTasks = tasks.filter(  // fungsi untuk menfilter tasks 
-      task => task.status === req.params.status // menyamakanya dengan route parameter dari url path 
-    );
-
-    res.json({  // mengrim data task status sebagai responsedalam format json 
-      success: true,  // penanda bahwa response berhasil 
-      data: filteredTasks //  mengirim status list yang sudah difilter 
-    });
-  } catch (error) {
-    res.status(400).json({ // mengirim response status 500 dalam format json 
-      success: false,  // penandan bahwa ada kegagalan response, false
-      error: error.message  // error diikuti dengan pesan error didalamnya 
-    })
-  }
-});
-
-
-app.post('/api/tasks', async (req, res) => { // Route POST dengan async agar bisa menggunakan await dan menangani promise rejection
-  try {
-    const { title, description, priority } = req.body;  // obcjt destructing untuk mengambil properti title, description dll dari req.body 
-
-    const requiredFields = ['title', 'description', 'priority']; // array yangd digunakan menvalidasi request field
-
-
-    const hasAllFields = requiredFields.every(field =>
-      Object.keys(req.body).includes(field)
-      //mengecek semua apakah field wajib ada  di req.body menggunakan every(harus semua true)
-    );
-
-    if (!hasAllFields) {
-      throw new Error('Semua field harus diisi')  // jika validasi gagal, lempar error untuk menghetikan eksekusi dan masuk ke catch 
-    }
-
-    const validPriorities = ['low', 'medium', 'high'];  // arrray yang digunakan untuk mevalidasi task list kategori apa 
-    if (!validPriorities.includes(priority)) {
-      throw new Error('Priority tidak valid')
-      // mengecek apakah priority termasuk dalam dafatr menggunakan includes 
-    }
-
-    const newTask = {  // membuat object task baru menggunakan shorthand property dan menambahkan id serta timestamp
-      id: Date.now().toString(),
-      title,
-      description,
-      priority,
-      status: 'todo',
-      createdAt: new Date().toISOString()
+    
+    // Spread operator untuk menambah properti
+    const userWithPosts = {
+      ...user,
+      posts: globalData.posts.filter(post => post.userId === user.id)
     };
-
-    tasks = [...tasks, newTask] // membuat array baru dengan spread operator(shallow copy) lalu menambahkan newTask di akhir
-
-    res.status(201).json({
-      success: true,
-      data: newTask
-      // mengirim HTTP 201(created) dengan data task baru dalam format json 
-    });
+    
+    res.json(successResponse(userWithPosts));
   } catch (error) {
-    res.status(400).json({ // mengririm response status 400 ke dalam format json 
-      success: false, // gagal dalam mengirim data false 
-      error: error.message // error dan diikuti dengan pesan error
-    })
+    res.status(500).json(errorResponse(null, error.message));
   }
 });
 
-app.put('/api/tasks/:id', async (req, res) => { // Route PUT  async untuk update task status berdasarkan parameter id (return Promise impliist) 
+app.get('/api/posts', async (req, res) => {
   try {
-    const { id } = req.params; // destrcuting untuk mengambil id dari req.params
-    const { status } = req.body; // destructing untuk mengambil statsu dari req.body 
-
-    const validStatus = ['todo', 'doing', 'done']; 
-    if (!validStatus.includes(status)) {  
-      throw new Error('Status tidak valid')  
-      // validasi status menggunakan includes (return bool dengan perbamdimngan ===)
+    const { category, minLikes } = req.query;
+    let filteredPosts = [...globalData.posts];
+    
+    // Multiple array methods
+    if (category) {
+      filteredPosts = filteredPosts.filter(post => post.category === category);
     }
-
-    const taskIndex = tasks.findIndex(t => t.id === id);  // mencari index task berdasarkan id menggunakan findIndex (return  -1 jika tidk ditemukan)
-
-    if (taskIndex === -1) {  // jika index-1(tidak ditemukan, lempar error untuk meghentikan eksekusi)
-      throw new Error('Task tidak ditemukan')
+    
+    if (minLikes) {
+      filteredPosts = filteredPosts.filter(post => post.likes >= parseInt(minLikes));
     }
-
-    const updatedTask = {
-      ...tasks[taskIndex], 
-      status,
-      updatedAt: new Date().toISOString()
-      // membuat object baru dengan shallow copy task lama lalu override status dan updatedAT
-    };
-
-    tasks = [
-      ...tasks.slice(0, taskIndex),  
-      updatedTask, 
-      ...tasks.slice(taskIndex + 1) 
-      // membuat array baru dengan mengganti item pada index tertentu menggunakan slice + spread (immutable pattern) 
-    ];
-
-    res.json({
-      success: true,
-      data: updatedTask
-      // mengirim response JSON berisi data task yang telah diperbarui 
+    
+    // Menggunakan map untuk transform data
+    const postsWithUser = filteredPosts.map(post => {
+      const user = globalData.users.find(u => u.id === post.userId);
+      return {
+        ...post,
+        author: user ? user.name : 'Unknown',
+        // Menggunakan includes untuk cek kategori populer
+        isPopular: [45, 56, 78].includes(post.likes)
+      };
     });
+    
+    res.json(successResponse(postsWithUser));
   } catch (error) {
-    res.status(400).json({ // mengririm response status 400 ke dalam format json 
-      success: false, // gagal dalam mengirim data false 
-      error: error.message // error dan diikuti dengan pesan error
-    })
+    res.status(500).json(errorResponse(null, error.message));
   }
 });
 
-
-app.delete('/api/tasks/:id', async (req, res) => { // Route delete dengan async untuk menghapus task lewat id 
-  try {
-    const { id } = req.params; // obcjt destructing untuk mengambil properti id dari url paath bagian :id  
-
-    const newTask = tasks.filter(task => task.id !== id); // membuat array baru dengan mengahpus task yang id-nya sesuai menggunakan filter (immutable)
-
-    if (newTask.length === tasks.length) { 
-      throw new Error('Task tidak ditemukan');
-      // jika panjang array tidak berubah, berarti id tidak akan ditemukan 
-    }
-
-    tasks = newTask; //\ mengganti refernsi tasks dengan array hasil filter
-
-    res.json({ success: true, message: 'Task deleted' })  // response dengan json menandakan succes dan pesan task terhapush 
-  } catch (error) {
-    res.status(400).json({ // mengririm response status 400 ke dalam format json 
-      success: false, // gagal dalam mengirim data false 
-      error: error.message // error dan diikuti dengan pesan error
-    })
-  }
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
-
-app.listen(5000, () => {  // menjalankan server pada port 5000 dan mengeksekusi callback saat server aktif 
-  console.log('🚀 Task Flow API running on http://localhost:5000')
-})
