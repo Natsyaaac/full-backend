@@ -2,124 +2,195 @@ import express from 'express';
 import cors from 'cors';
 
 const app = express();
-const port = 5000;
-
 app.use(cors());
 app.use(express.json());
 
-// Data dummy dengan berbagai scope (global scope)
-const globalData = {
-  users: [
-    { id: 1, name: 'Alex Johnson', email: 'alex@example.com', role: 'admin', active: true },
-    { id: 2, name: 'Sarah Chen', email: 'sarah@example.com', role: 'user', active: true },
-    { id: 3, name: 'Mike Wilson', email: 'mike@example.com', role: 'user', active: false },
-    { id: 4, name: 'Emma Davis', email: 'emma@example.com', role: 'editor', active: true },
-    { id: 5, name: 'James Brown', email: 'james@example.com', role: 'user', active: true }
-  ],
-  posts: [
-    { id: 1, userId: 1, title: 'Getting Started with React', likes: 45, category: 'food' },
-    { id: 2, userId: 2, title: 'Modern JavaScript Features', likes: 32, category: 'food' },
-    { id: 3, userId: 1, title: 'Travel Tips 2024', likes: 78, category: 'food' },
-    { id: 4, userId: 3, title: 'Healthy Recipes', likes: 23, category: 'food' },
-    { id: 5, userId: 4, title: 'Photography Basics', likes: 56, category: 'food' },
-    { id: 6, userId: 2, title: 'Meditation Guide', likes: 41, category: 'food' }
-  ]
-};
+const initialFoodOrders = [
+  {
+    id: '1',
+    title: 'Nasi Goreng',
+    note: 'Pedas level 3',
+    status: 'pending',
+    priority: 'high',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    title: 'Mie Ayam',
+    note: 'Tanpa sawi',
+    status: 'diproses',
+    priority: 'medium',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '3',
+    title: 'Ayam Geprek',
+    note: 'Sambal dipisah',
+    status: 'selesai',
+    priority: 'high',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '4',
+    title: 'Bakso',
+    note: 'Kuah dipisah',
+    status: 'pending',
+    priority: 'low',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '5',
+    title: 'Es Teh',
+    note: 'Gula sedikit',
+    status: 'diproses',
+    priority: 'low',
+    createdAt: new Date().toISOString()
+  }
+]
 
-// Closure example: function factory
-const createApiResponse = (statusCode) => {
-  // statusCode adalah closure variable
-  return (data, message = 'Success') => ({
-    status: statusCode,
-    data: data,
-    message: message,
-    timestamp: new Date().toISOString()
-  });
-};
+let foods = [...initialFoodOrders]
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
-const successResponse = createApiResponse(200);
-const errorResponse = createApiResponse(500);
-
-// API Routes dengan async/await dan error handling
-app.get('/api/users', async (req, res) => {
+app.get('/api/foods', async (req, res) => {
   try {
-    // Simulasi async operation
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Destructuring query params
-    const { filter, role } = req.query;
-    let filteredUsers = [...globalData.users];
-    
-    // Menggunakan filter method
-    if (filter === 'active') {
-      filteredUsers = filteredUsers.filter(user => user.active);
-    }
-    
-    if (role) {
-      filteredUsers = filteredUsers.filter(user => user.role === role);
-    }
-    
-    res.json(successResponse(filteredUsers));
+    await delay(500);
+    res.json({
+      success: true,
+      data: [...foods]
+    });
   } catch (error) {
-    res.status(500).json(errorResponse(null, error.message));
+    res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+app.get('/api/foods/status/:status', async (req, res) => {
+  try {
+    await delay(300);
+    const validOrderstatus = ['pending', 'diproses', 'selesai'];
+    if (!validOrderstatus.includes(req.params.status)) {
+      throw new Error('Status tidak valid')
+    }
+
+    const filteredOrders = foods.filter(
+      food => food.status === req.params.status
+    );
+    res.json({
+      success: true,
+      data: filteredOrders
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    })
   }
 });
 
-app.get('/api/users/:id', async (req, res) => {
+app.post('/api/foods', async (req, res) => {
+  try {
+    const { title, note, priority } = req.body
+    const requiredOrderFields = ['title', 'none', 'priority']
+    const hasALlOrderFields = requiredOrderFields.every(field =>
+      Object.keys(req.body).includes(field)
+    );
+
+    if (!hasALlOrderFields) {
+      throw new Error('Semua field order harus diisi')
+    }
+
+    const validOrderPriorities = ['pending', 'diproses', 'selesai'];
+    if (!validOrderPriorities.includes(priority)) {
+      throw new Error('Protity tidak valid')
+    }
+
+    const maxId = initialFoodOrders.reduce((max, item) => Math.max(max, item.id), 0);
+    const newFoodOrders = {
+      id: maxId + 1,
+      title,
+      note,
+      priority,
+      status: 'todo',
+      createdAt: new Date().toISOString()
+    };
+
+    foods = [...foods, newFoodOrders]
+
+    res.status(201).json({
+      success: true,
+      data: newFoodOrders
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    })
+  }
+});
+
+app.put('/api/foods/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Menggunakan find method
-    const user = globalData.users.find(user => user.id === parseInt(id));
-    
-    if (!user) {
-      return res.status(404).json(errorResponse(null, 'User not found'));
+    const { status } = req.body;
+
+    const validOrderStatus = ['pending', 'diproses', 'selesai'];
+    if(!validOrderStatus.includes(status)) {
+      throw new Error('Status tidak valid')
     }
-    
-    // Spread operator untuk menambah properti
-    const userWithPosts = {
-      ...user,
-      posts: globalData.posts.filter(post => post.userId === user.id)
+
+    const foodIndex = foods.findIndex(f => f.id === id)
+    if (foodIndex === -1) {
+      throw new Error('Task tidak ditemukan')
+    }
+
+    const updateFoods = {
+      ...foods[foodIndex],
+      status,
+      updateAt: new Date().toISOString()
     };
-    
-    res.json(successResponse(userWithPosts));
-  } catch (error) {
-    res.status(500).json(errorResponse(null, error.message));
-  }
-});
 
-app.get('/api/posts', async (req, res) => {
-  try {
-    const { category, minLikes } = req.query;
-    let filteredPosts = [...globalData.posts];
-    
-    // Multiple array methods
-    if (category) {
-      filteredPosts = filteredPosts.filter(post => post.category === category);
-    }
-    
-    if (minLikes) {
-      filteredPosts = filteredPosts.filter(post => post.likes >= parseInt(minLikes));
-    }
-    
-    // Menggunakan map untuk transform data
-    const postsWithUser = filteredPosts.map(post => {
-      const user = globalData.users.find(u => u.id === post.userId);
-      return {
-        ...post,
-        author: user ? user.name : 'Unknown',
-        // Menggunakan includes untuk cek kategori populer
-        isPopular: [45, 56, 78].includes(post.likes)
-      };
+    foods = [
+      ...foods.slice(0, foodIndex),
+      updateFoods,
+      ...foods.slice(foodIndex + 1)
+    ];
+
+    res.json({
+      success: true,
+      data: updateFoods
     });
-    
-    res.json(successResponse(postsWithUser));
   } catch (error) {
-    res.status(500).json(errorResponse(null, error.message));
+    res.status(400).json({
+      success: false,
+      error: error.message
+    })
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+app.delete('/api/foods/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const newFoods = foods.filter(food => food.id !== id);
+
+    if(newFoods.length === foods.length) {
+      throw new Error('Food Tidak ditemukan')
+    }
+
+    foods = newFoods
+    res.json({
+      success: true,
+      message: 'Order Terhapus'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error.message
+    })
+  }
 });
+
+app.listen(5000, () => {
+  console.log('🚀 Task Flow API running on http://localhost:5000')
+})
