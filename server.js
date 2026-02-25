@@ -51,6 +51,28 @@ const initialFoodOrders = [
 let foods = [...initialFoodOrders]
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
+const generateNewId = () => {
+  // 1. foods.map(food => parseInt(food.id)) 
+  //    Mengubah semua ID string menjadi number
+  //    ['1', '2', '3'] → [1, 2, 3]
+  
+  // 2. Math.max(...array)
+  //    Mencari nilai tertinggi dari array
+  
+  // 3. || 0 
+  //    Jika array kosong, gunakan 0 sebagai default
+  
+  const maxId = Math.max(...foods.map(food => parseInt(food.id) || 0));
+  
+  // 4. Tambah 1 dan kembalikan sebagai string
+  return (maxId + 1).toString();
+};
+
+// Contoh penggunaan:
+// Jika foods = [{id: '1'}, {id: '2'}, {id: '3'}]
+// maxId = 3
+// return '4'
+
 app.get('/api/foods', async (req, res) => {
   try {
     await delay(500);
@@ -92,7 +114,7 @@ app.get('/api/foods/status/:status', async (req, res) => {
 app.post('/api/foods', async (req, res) => {
   try {
     const { title, note, priority } = req.body
-    const requiredOrderFields = ['title', 'none', 'priority']
+    const requiredOrderFields = ['title', 'note', 'priority']
     const hasALlOrderFields = requiredOrderFields.every(field =>
       Object.keys(req.body).includes(field)
     );
@@ -101,18 +123,18 @@ app.post('/api/foods', async (req, res) => {
       throw new Error('Semua field order harus diisi')
     }
 
-    const validOrderPriorities = ['pending', 'diproses', 'selesai'];
+    const validOrderPriorities = ['low', 'medium', 'high'];
     if (!validOrderPriorities.includes(priority)) {
       throw new Error('Protity tidak valid')
     }
 
-    const maxId = initialFoodOrders.reduce((max, item) => Math.max(max, item.id), 0);
+    const maxId = generateNewId()
     const newFoodOrders = {
-      id: maxId + 1,
+      id: maxId,
       title,
       note,
       priority,
-      status: 'todo',
+      status: 'diproses',
       createdAt: new Date().toISOString()
     };
 
