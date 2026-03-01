@@ -16,17 +16,17 @@ const bugUserGlobal = {
     { id: 5, name: 'James Brown', email: 'james@example.com', role: 'user', active: true }
   ],
   bugs: [
-    { id: 1, userId: 1, title: 'Login Button Not Working', likes: 45, category: 'bug' },
-    { id: 2, userId: 2, title: 'API Response Delay Issue', likes: 32, category: 'bug' },
-    { id: 3, userId: 1, title: 'Form Validation Error', likes: 78, category: 'bug' },
-    { id: 4, userId: 3, title: 'Navbar Overlapping Content', likes: 23, category: 'bug' },
-    { id: 5, userId: 4, title: 'Image Not Loading on Mobile', likes: 56, category: 'bug' },
-    { id: 6, userId: 2, title: 'Token Expired Too Fast', likes: 41, category: 'bug' },
-    { id: 7, userId: 3, title: 'Dark Mode Toggle Crash', likes: 98, category: 'bug' },
-    { id: 8, userId: 4, title: 'Search Feature Not Filtering', likes: 58, category: 'bug' },
-    { id: 9, userId: 2, title: 'Pagination Not Updating', likes: 77, category: 'bug' },
-    { id: 10, userId: 5, title: 'Data Not Saved to Database', likes: 50, category: 'bug' },
-    { id: 12, userId: 5, title: '500 Internal Server Error', likes: 80, category: 'bug' }
+    { id: 1, userId: 1, title: 'Login Button Not Working', likes: 45, category: 'Bug' },
+    { id: 2, userId: 2, title: 'API Response Delay Issue', likes: 32, category: 'Bug' },
+    { id: 3, userId: 1, title: 'Form Validation Error', likes: 78, category: 'Bug' },
+    { id: 4, userId: 3, title: 'Navbar Overlapping Content', likes: 23, category: 'Bug' },
+    { id: 5, userId: 4, title: 'Image Not Loading on Mobile', likes: 56, category: 'Bug' },
+    { id: 6, userId: 2, title: 'Token Expired Too Fast', likes: 41, category: 'Bug' },
+    { id: 7, userId: 3, title: 'Dark Mode Toggle Crash', likes: 98, category: 'Bug' },
+    { id: 8, userId: 4, title: 'Search Feature Not Filtering', likes: 58, category: 'Bug' },
+    { id: 9, userId: 2, title: 'Pagination Not Updating', likes: 77, category: 'Bug' },
+    { id: 10, userId: 5, title: 'Data Not Saved to Database', likes: 50, category: 'Bug' },
+    { id: 12, userId: 5, title: '500 Internal Server Error', likes: 80, category: 'Bug' }
   ]
 }
 
