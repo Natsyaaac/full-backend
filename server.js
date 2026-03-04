@@ -22,7 +22,12 @@ const globalData = {  // object global sebagai mock dtata awal aplikasi (in-memo
     { id: 3, userId: 1, title: 'Travel Tips 2024', likes: 78, category: 'food' },
     { id: 4, userId: 3, title: 'Healthy Recipes', likes: 23, category: 'food' },
     { id: 5, userId: 4, title: 'Photography Basics', likes: 56, category: 'food' },
-    { id: 6, userId: 2, title: 'Meditation Guide', likes: 41, category: 'food' }
+    { id: 6, userId: 2, title: 'Meditation Guide', likes: 41, category: 'food' },
+    { id: 7, userId: 3, title: 'Recipes', likes: 98, category: 'food' },
+    { id: 8, userId: 4, title: 'Photography Basics', likes: 58, category: 'food' },
+    { id: 9, userId: 2, title: 'Meditation Guide', likes: 77, category: 'food' },
+    {id: 10, userId: 5, title: 'Nasi Goreng', likes: 50, category: 'food'},
+    {id: 12, userId: 5, title: 'Ikan Goreng', likes: 80, category: 'food'}
   ]
 }
 
